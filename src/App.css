@@ -22,3 +22,10 @@
   user-select: none;
   text-shadow: 0 0 40px rgba(139, 92, 246, 0.12);
 }
+
+.dot {
+  display: inline-block;
+  transition: text-shadow 0.3s ease;
+  cursor: default;
+  pointer-events: auto;
+}

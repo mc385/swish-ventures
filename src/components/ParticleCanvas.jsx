@@ -21,7 +21,8 @@ const portfolio = [
 ];
 
 const config = {
-  particleCount: 250,
+  particleCount: 200,
+  ambientCount: 500,
   baseRadius: 1.5,
   nodeRadius: 3,
   maxHoverRadius: 45,
@@ -29,17 +30,84 @@ const config = {
   baseSpeed: 0.3,
   colors: {
     bg: '#07050A',
-    particle: 'rgba(139, 92, 246, 0.12)',
-    nodeIdle: 'rgba(139, 92, 246, 0.4)',
     textPrimary: '#FFFFFF',
     textSecondary: '#8E8D98',
   },
 };
 
-class Particle {
-  constructor(width, height, isNode, data = null) {
+// Ambient dots — never attracted, always visible
+class AmbientDot {
+  constructor(width, height) {
     this.x = Math.random() * width;
     this.y = Math.random() * height;
+    this.vx = (Math.random() - 0.5) * 0.15;
+    this.vy = (Math.random() - 0.5) * 0.15;
+    this.angle = Math.random() * Math.PI * 2;
+    this.angleSpeed = Math.random() * 0.008 + 0.002;
+    this.radius = Math.random() * 2.0 + 0.8;
+    this.alpha = Math.random() * 0.5 + 0.2;
+    this.pulseOffset = Math.random() * Math.PI * 2;
+    this.pulseSpeed = Math.random() * 0.5 + 0.3;
+  }
+
+  update(width, height, t) {
+    this.angle += this.angleSpeed;
+    this.x += this.vx + Math.sin(this.angle) * 0.08;
+    this.y += this.vy + Math.cos(this.angle) * 0.08;
+
+    if (this.x < 0) this.x = width;
+    if (this.x > width) this.x = 0;
+    if (this.y < 0) this.y = height;
+    if (this.y > height) this.y = 0;
+  }
+
+  draw(ctx, t) {
+    const pulse = Math.sin(t * this.pulseSpeed + this.pulseOffset) * 0.5 + 0.5;
+    const a = this.alpha * (0.7 + pulse * 0.3);
+    // Outer glow
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(139, 92, 246, ${a * 0.6})`;
+    ctx.fill();
+    // Bright center for larger dots
+    if (this.radius > 1.2) {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 0.8, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${a * 0.5})`;
+      ctx.fill();
+    }
+  }
+}
+
+// Find a position that doesn't overlap with existing particles
+function findNonOverlappingPos(width, height, existingParticles, minDist = 100) {
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    let ok = true;
+    for (const p of existingParticles) {
+      const dx = p.x - x;
+      const dy = p.y - y;
+      if (Math.sqrt(dx * dx + dy * dy) < minDist) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return { x, y };
+  }
+  return { x: Math.random() * width, y: Math.random() * height };
+}
+
+class Particle {
+  constructor(width, height, isNode, data = null, existingParticles = []) {
+    if (isNode) {
+      const pos = findNonOverlappingPos(width, height, existingParticles);
+      this.x = pos.x;
+      this.y = pos.y;
+    } else {
+      this.x = Math.random() * width;
+      this.y = Math.random() * height;
+    }
     this.vx = (Math.random() - 0.5) * config.baseSpeed;
     this.vy = (Math.random() - 0.5) * config.baseSpeed;
     this.angle = Math.random() * Math.PI * 2;
@@ -49,50 +117,114 @@ class Particle {
     this.currentRadius = isNode ? config.nodeRadius : config.baseRadius;
     this.targetRadius = this.currentRadius;
     this.alpha = isNode ? 0.8 : Math.random() * 0.5 + 0.1;
+    this.baseAlpha = this.alpha;
+    this.attracted = false;
+    this.releasing = false;
   }
 
-  update(width, height, mouse, hoveredRef) {
-    this.angle += this.angleSpeed;
-    this.x += this.vx + Math.sin(this.angle) * 0.2;
-    this.y += this.vy + Math.cos(this.angle) * 0.2;
+  update(width, height, mouse, hoveredRef, dotAttract, allParticles) {
+    const dotProximity = dotAttract ? dotAttract.proximity : 0;
 
+    // Attraction phase
+    if (dotProximity > 0.05 && dotAttract.x > 0) {
+      this.attracted = true;
+
+      const dx = dotAttract.x - this.x;
+      const dy = dotAttract.y - this.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const attractRadius = 500;
+
+      if (dist < attractRadius && dist > 2) {
+        const distFactor = 1 - dist / attractRadius;
+        const force = dotProximity * 0.06 * distFactor * distFactor;
+        this.x += dx * force;
+        this.y += dy * force;
+      }
+
+      // Fade out near dot center (absorbed into orb)
+      const distToDot = Math.sqrt(
+        (this.x - dotAttract.x) ** 2 + (this.y - dotAttract.y) ** 2
+      );
+      if (distToDot < 80) {
+        const fadeZone = 1 - distToDot / 80;
+        this.alpha = this.baseAlpha * (1 - fadeZone * dotProximity * 0.9);
+      } else {
+        this.alpha += (this.baseAlpha - this.alpha) * 0.05;
+      }
+    } else {
+      // Release: fade out → teleport → fade in
+      if (this.attracted && !this.releasing) {
+        this.releasing = true;
+        // Start fading out quickly
+      }
+
+      if (this.releasing) {
+        this.alpha *= 0.85;
+        if (this.alpha < 0.01) {
+          // Invisible — teleport to non-overlapping position
+          const pos = findNonOverlappingPos(width, height, allParticles || [], this.isNode ? 100 : 20);
+          this.x = pos.x;
+          this.y = pos.y;
+          this.releasing = false;
+          this.attracted = false;
+        }
+      } else {
+        // Normal: fade back in
+        this.alpha += (this.baseAlpha - this.alpha) * 0.03;
+      }
+    }
+
+    // Normal movement — always active, just quieter when attracted
+    const moveFactor = this.attracted ? 0.05 : 1;
+    this.angle += this.angleSpeed;
+    this.x += (this.vx + Math.sin(this.angle) * 0.2) * moveFactor;
+    this.y += (this.vy + Math.cos(this.angle) * 0.2) * moveFactor;
+
+    // Wrap
     if (this.x < 0) this.x = width;
     if (this.x > width) this.x = 0;
     if (this.y < 0) this.y = height;
     if (this.y > height) this.y = 0;
 
-    const dx = mouse.x - this.x;
-    const dy = mouse.y - this.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Mouse hover on nodes (only when not attracted)
+    if (!this.attracted) {
+      const mdx = mouse.x - this.x;
+      const mdy = mouse.y - this.y;
+      const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
 
-    if (this.isNode) {
-      if (distance < config.interactionRadius) {
-        this.targetRadius = config.maxHoverRadius;
-        hoveredRef.current = this;
-        this.x -= (this.vx + Math.sin(this.angle) * 0.2) * 0.9;
-        this.y -= (this.vy + Math.cos(this.angle) * 0.2) * 0.9;
+      if (this.isNode) {
+        if (mDist < config.interactionRadius) {
+          this.targetRadius = config.maxHoverRadius;
+          hoveredRef.current = this;
+          this.x -= (this.vx + Math.sin(this.angle) * 0.2) * 0.9;
+          this.y -= (this.vy + Math.cos(this.angle) * 0.2) * 0.9;
+        } else {
+          this.targetRadius = config.nodeRadius;
+          if (hoveredRef.current === this) hoveredRef.current = null;
+        }
+        this.currentRadius += (this.targetRadius - this.currentRadius) * 0.1;
       } else {
-        this.targetRadius = config.nodeRadius;
-        if (hoveredRef.current === this) hoveredRef.current = null;
+        if (mDist < config.interactionRadius) {
+          const force = (config.interactionRadius - mDist) / config.interactionRadius;
+          this.x -= mdx * force * 0.02;
+          this.y -= mdy * force * 0.02;
+        }
       }
-      this.currentRadius += (this.targetRadius - this.currentRadius) * 0.1;
     } else {
-      if (distance < config.interactionRadius) {
-        const force = (config.interactionRadius - distance) / config.interactionRadius;
-        this.x -= dx * force * 0.02;
-        this.y -= dy * force * 0.02;
-        this.alpha = Math.min(1, this.alpha + 0.05);
-      } else {
-        this.alpha = Math.max(0.1, this.alpha - 0.01);
+      if (this.isNode) {
+        this.targetRadius = config.nodeRadius;
+        this.currentRadius += (this.targetRadius - this.currentRadius) * 0.1;
+        if (hoveredRef.current === this) hoveredRef.current = null;
       }
     }
   }
 
   draw(ctx) {
+    if (this.alpha < 0.01) return;
+
     ctx.beginPath();
 
-    if (this.isNode && this.currentRadius > config.nodeRadius + 1) {
-      // Expanded node
+    if (this.isNode && this.currentRadius > config.nodeRadius + 1 && !this.attracted) {
       ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
       ctx.fillStyle = '#0a0712';
       ctx.fill();
@@ -105,7 +237,6 @@ class Particle {
       gradient.addColorStop(0.5, '#6366f1');
       gradient.addColorStop(1, '#8B5CF6');
 
-      // Glow border
       ctx.save();
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
@@ -115,14 +246,12 @@ class Particle {
       ctx.stroke();
       ctx.restore();
 
-      // Sharp border
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
       ctx.strokeStyle = gradient;
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Text labels
       if (this.currentRadius > config.maxHoverRadius * 0.8) {
         ctx.save();
         const textAlpha = (this.currentRadius - config.maxHoverRadius * 0.8) / (config.maxHoverRadius * 0.2);
@@ -141,14 +270,13 @@ class Particle {
         ctx.restore();
       }
     } else {
-      // Default particle/node
-      ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, this.isNode ? this.currentRadius : config.baseRadius, 0, Math.PI * 2);
       if (this.isNode) {
-        ctx.fillStyle = config.colors.nodeIdle;
+        ctx.fillStyle = `rgba(139, 92, 246, ${this.alpha})`;
         ctx.fill();
         ctx.beginPath();
         ctx.arc(this.x, this.y, 1, 0, Math.PI * 2);
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
         ctx.fill();
       } else {
         ctx.fillStyle = `rgba(139, 92, 246, ${this.alpha * 0.3})`;
@@ -158,23 +286,37 @@ class Particle {
   }
 }
 
-export default function ParticleCanvas() {
+export default function ParticleCanvas({ dotState }) {
   const canvasRef = useRef(null);
   const particlesRef = useRef([]);
+  const ambientRef = useRef([]);
   const mouseRef = useRef({ x: -1000, y: -1000 });
   const hoveredNodeRef = useRef(null);
   const animFrameRef = useRef(null);
+  const dotStateRef = useRef(dotState);
+  const startTimeRef = useRef(null);
+
+  useEffect(() => {
+    dotStateRef.current = dotState;
+  }, [dotState]);
 
   const initParticles = useCallback((w, h) => {
     const particles = [];
     portfolio.forEach((company) => {
-      particles.push(new Particle(w, h, true, company));
+      particles.push(new Particle(w, h, true, company, particles));
     });
     const remaining = config.particleCount - portfolio.length;
     for (let i = 0; i < remaining; i++) {
       particles.push(new Particle(w, h, false));
     }
     particlesRef.current = particles;
+
+    // Ambient dots — always visible
+    const ambient = [];
+    for (let i = 0; i < config.ambientCount; i++) {
+      ambient.push(new AmbientDot(w, h));
+    }
+    ambientRef.current = ambient;
   }, []);
 
   useEffect(() => {
@@ -212,9 +354,18 @@ export default function ParticleCanvas() {
       }
     }
 
-    function animate() {
+    function animate(now) {
+      if (!startTimeRef.current) startTimeRef.current = now;
+      const t = (now - startTimeRef.current) / 1000;
+
       ctx.fillStyle = config.colors.bg;
       ctx.fillRect(0, 0, width, height);
+
+      // Draw ambient dots first (background layer)
+      ambientRef.current.forEach((dot) => {
+        dot.update(width, height, t);
+        dot.draw(ctx, t);
+      });
 
       drawConnections();
 
@@ -224,8 +375,9 @@ export default function ParticleCanvas() {
         return 0;
       });
 
-      particlesRef.current.forEach((particle) => {
-        particle.update(width, height, mouseRef.current, hoveredNodeRef);
+      const allP = particlesRef.current;
+      allP.forEach((particle) => {
+        particle.update(width, height, mouseRef.current, hoveredNodeRef, dotStateRef.current, allP);
         particle.draw(ctx);
       });
 
@@ -245,7 +397,7 @@ export default function ParticleCanvas() {
     window.addEventListener('mouseout', onMouseOut);
 
     resize();
-    animate();
+    animFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener('resize', resize);

@@ -37,11 +37,20 @@ canvas.fx{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-e
 .underline-accent::after{content:'';position:absolute;left:0;right:0;bottom:-3px;height:1px;background:linear-gradient(90deg,transparent,rgba(139,92,246,0.6),rgba(57,0,103,0.3),transparent);box-shadow:0 0 8px rgba(139,92,246,0.3),0 0 20px rgba(57,0,103,0.15)}
 
 @media(max-width:768px){
-  .title{font-size:clamp(32px,8vw,48px)}
-  .tagline{font-size:13px;margin-top:18px}
+  .title{font-size:clamp(28px,10vw,44px)}
+  .tagline{font-size:clamp(12px,3vw,15px);margin-top:16px}
+  .content{padding:0 20px}
   .cursor-dot,.cursor-glow{display:none}
   body,html{cursor:auto}
-  .dot{cursor:default}
+  .dot{cursor:default;margin-left:3px}
+}
+@media(max-width:400px){
+  .title{font-size:clamp(24px,9vw,36px)}
+  .tagline{font-size:12px;margin-top:12px}
+}
+@media(max-height:500px){
+  .title{font-size:clamp(24px,4vw,36px)}
+  .tagline{font-size:12px;margin-top:10px}
 }
 </style>
 </head>
@@ -131,7 +140,7 @@ document.addEventListener('touchend',()=>{mouse.x=-1000;mouse.y=-1000;dotState={
 class AmbientDot{
   constructor(w,h){this.x=Math.random()*w;this.y=Math.random()*h;this.vx=(Math.random()-0.5)*0.15;this.vy=(Math.random()-0.5)*0.15;this.angle=Math.random()*Math.PI*2;this.as=Math.random()*0.008+0.002;this.radius=Math.random()*2+0.8;this.alpha=Math.random()*0.5+0.2;this.po=Math.random()*Math.PI*2;this.ps=Math.random()*0.5+0.3}
   update(w,h){this.angle+=this.as;this.x+=this.vx+Math.sin(this.angle)*0.08;this.y+=this.vy+Math.cos(this.angle)*0.08;if(this.x<0)this.x=w;if(this.x>w)this.x=0;if(this.y<0)this.y=h;if(this.y>h)this.y=0}
-  draw(ctx,t){const p=Math.sin(t*this.ps+this.po)*0.5+0.5,a=this.alpha*(0.7+p*0.3);ctx.beginPath();ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);ctx.fillStyle=`rgba(139,92,246,${a*0.6})`;ctx.fill();if(this.radius>1.2){ctx.beginPath();ctx.arc(this.x,this.y,0.8,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${a*0.5})`;ctx.fill()}}
+  draw(ctx,t){const p=Math.sin(t*this.ps+this.po)*0.5+0.5,a=this.alpha*(0.7+p*0.3);ctx.beginPath();ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);ctx.fillStyle=`rgba(180,210,255,${a*0.5})`;ctx.fill();if(this.radius>1.2){ctx.beginPath();ctx.arc(this.x,this.y,0.8,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${a*0.6})`;ctx.fill()}}
 }
 
 // ========== FIND NON-OVERLAPPING ==========
@@ -169,14 +178,14 @@ class Particle{
     ctx.beginPath();
     if(this.isNode&&this.cr>cfg.nodeRadius+1&&!this.attracted){
       ctx.arc(this.x,this.y,this.cr,0,Math.PI*2);ctx.fillStyle='#0a0712';ctx.fill();
-      const g=ctx.createLinearGradient(this.x,this.y-this.cr,this.x,this.y+this.cr);g.addColorStop(0,'#390067');g.addColorStop(0.5,'#6366f1');g.addColorStop(1,'#8B5CF6');
+      const g=ctx.createLinearGradient(this.x,this.y-this.cr,this.x,this.y+this.cr);g.addColorStop(0,'#1a3a6e');g.addColorStop(0.5,'#4488cc');g.addColorStop(1,'#88bbee');
       ctx.save();ctx.beginPath();ctx.arc(this.x,this.y,this.cr,0,Math.PI*2);ctx.strokeStyle=g;ctx.lineWidth=4;ctx.filter='blur(6px)';ctx.stroke();ctx.restore();
       ctx.beginPath();ctx.arc(this.x,this.y,this.cr,0,Math.PI*2);ctx.strokeStyle=g;ctx.lineWidth=1.5;ctx.stroke();
       if(this.cr>cfg.maxHoverRadius*0.8){ctx.save();const ta=(this.cr-cfg.maxHoverRadius*0.8)/(cfg.maxHoverRadius*0.2);ctx.globalAlpha=ta;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 11px Inter,sans-serif';ctx.fillStyle='#fff';ctx.fillText(this.data.name,this.x,this.y-4);ctx.font='400 8px Inter,sans-serif';ctx.fillStyle='#8E8D98';ctx.fillText(this.data.sector,this.x,this.y+8);ctx.restore()}
     }else{
       ctx.arc(this.x,this.y,this.isNode?this.cr:cfg.baseRadius,0,Math.PI*2);
-      if(this.isNode){ctx.fillStyle=`rgba(139,92,246,${this.alpha})`;ctx.fill();ctx.beginPath();ctx.arc(this.x,this.y,1,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${this.alpha})`;ctx.fill()}
-      else{ctx.fillStyle=`rgba(139,92,246,${this.alpha*0.3})`;ctx.fill()}
+      if(this.isNode){ctx.fillStyle=`rgba(180,210,255,${this.alpha*0.7})`;ctx.fill();ctx.beginPath();ctx.arc(this.x,this.y,1,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${this.alpha})`;ctx.fill()}
+      else{ctx.fillStyle=`rgba(180,210,255,${this.alpha*0.25})`;ctx.fill()}
     }
   }
 }
@@ -205,7 +214,7 @@ function animBg(now){
   ambientDots.forEach(d=>{d.update(W,H);d.draw(bgCtx,t)});
   // connections
   const nodes=particles.filter(p=>p.isNode);bgCtx.lineWidth=0.5;
-  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<250){bgCtx.strokeStyle=`rgba(139,92,246,${(1-d/250)*0.15})`;bgCtx.beginPath();bgCtx.moveTo(nodes[i].x,nodes[i].y);bgCtx.lineTo(nodes[j].x,nodes[j].y);bgCtx.stroke()}}
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<250){bgCtx.strokeStyle=`rgba(180,210,255,${(1-d/250)*0.1})`;bgCtx.beginPath();bgCtx.moveTo(nodes[i].x,nodes[i].y);bgCtx.lineTo(nodes[j].x,nodes[j].y);bgCtx.stroke()}}
   particles.sort((a,b)=>{if(a===hoveredNode)return 1;if(b===hoveredNode)return-1;return 0});
   particles.forEach(p=>{p.update(W,H,dotState,particles);p.draw(bgCtx)});
   requestAnimationFrame(animBg);

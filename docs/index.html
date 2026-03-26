@@ -226,16 +226,15 @@ const fxCtx=fxCanvas.getContext('2d');
 const noise=createNoise();
 
 const nebBuf=document.createElement('canvas'),nebCtx2=nebBuf.getContext('2d');
-const NR=240;nebBuf.width=NR;nebBuf.height=NR;
+const NR=isMobile?120:240;nebBuf.width=NR;nebBuf.height=NR;
 const ambBuf=document.createElement('canvas'),ambCtx2=ambBuf.getContext('2d');
-const AR=200;ambBuf.width=AR;ambBuf.height=AR;
+const AR=isMobile?100:200;ambBuf.width=AR;ambBuf.height=AR;
 
 let smoothP=0,prevP=0,burstI=0,burstT=0,wasBright=false,lastDX=0,lastDY=0,fxStart=null;
 
 function resizeFx(){fxCanvas.width=W*dpr;fxCanvas.height=H*dpr;fxCtx.setTransform(dpr,0,0,dpr,0,0)}
 
 function drawAmbNeb(t){
-  if(isMobile)return;
   const d=ambCtx2.createImageData(AR,AR),data=d.data,st=t*0.03;
   for(let py=0;py<AR;py++)for(let px=0;px<AR;px++){
     const u=px/AR,v=py/AR,sc=2.4;
@@ -283,7 +282,7 @@ function drawBeam(dx,dy,p,t){
 }
 
 function drawNebula(dx,dy,p,t){
-  if(p<0.03||isMobile)return;
+  if(p<0.03)return;
   const np=Math.min(1,p/0.5),e=1-Math.pow(1-np,2),bl=W*0.6*e;
   const cx=dx-bl*0.42,cy=dy-25*e,nw=700*e,nh=500*e;
   const id=nebCtx2.createImageData(NR,NR),data=id.data,st=t*0.05;

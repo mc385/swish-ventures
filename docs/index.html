@@ -26,9 +26,11 @@ canvas.fx{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-e
 .revealed .reveal-1{opacity:1;filter:blur(0);transition-delay:0.3s}
 .revealed .reveal-2{opacity:1;filter:blur(0);transition-delay:1s}
 
-.title{display:flex;flex-direction:column;align-items:center;font-family:'Space Grotesk',sans-serif;font-size:clamp(44px,5.5vw,76px);font-weight:400;line-height:1.15;color:rgba(255,255,255,0.95);letter-spacing:-0.03em;user-select:none;text-shadow:0 0 30px rgba(139,92,246,0.1),0 0 60px rgba(57,0,103,0.12),0 0 120px rgba(57,0,103,0.06)}
+.title{display:flex;flex-direction:column;align-items:center;font-family:'Space Grotesk',sans-serif;user-select:none}
+.title-main{font-size:clamp(42px,5vw,72px);font-weight:500;letter-spacing:-0.03em;color:rgba(255,255,255,0.9);line-height:1.1}
+.title-sub{font-size:clamp(14px,1.4vw,20px);font-weight:400;letter-spacing:0.22em;color:rgba(255,255,255,0.3);margin-top:10px}
 
-.dot{color:rgba(255,255,255,0.95);display:inline-block;transition:opacity 0.4s ease;cursor:none;pointer-events:auto;margin-left:6px;position:relative}
+.dot{color:rgba(255,255,255,0.3);display:inline-block;transition:opacity 0.4s ease;cursor:none;pointer-events:auto;margin-left:6px;position:relative}
 .dot::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:transparent;box-shadow:0 0 10px rgba(139,92,246,0.7),0 0 25px rgba(57,0,103,0.5),0 0 50px rgba(57,0,103,0.2);animation:dotPulse 3s ease-in-out infinite}
 @keyframes dotPulse{0%,100%{opacity:0;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.8)}}
 
@@ -37,20 +39,23 @@ canvas.fx{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-e
 .underline-accent::after{content:'';position:absolute;left:0;right:0;bottom:-3px;height:1px;background:linear-gradient(90deg,transparent,rgba(139,92,246,0.6),rgba(57,0,103,0.3),transparent);box-shadow:0 0 8px rgba(139,92,246,0.3),0 0 20px rgba(57,0,103,0.15)}
 
 @media(max-width:768px){
-  .title{font-size:clamp(28px,10vw,44px)}
-  .tagline{font-size:clamp(12px,3vw,15px);margin-top:16px}
+  .title-main{font-size:clamp(32px,9vw,44px)}
+  .title-sub{font-size:clamp(11px,2.5vw,14px);margin-top:8px}
+  .tagline{font-size:clamp(11px,2.5vw,14px);margin-top:16px}
   .content{padding:0 20px}
   .cursor-dot,.cursor-glow{display:none}
   body,html{cursor:auto}
   .dot{cursor:default;margin-left:3px}
 }
 @media(max-width:400px){
-  .title{font-size:clamp(24px,9vw,36px)}
-  .tagline{font-size:12px;margin-top:12px}
+  .title-main{font-size:clamp(28px,10vw,36px)}
+  .title-sub{font-size:10px}
+  .tagline{font-size:11px;margin-top:12px}
 }
 @media(max-height:500px){
-  .title{font-size:clamp(24px,4vw,36px)}
-  .tagline{font-size:12px;margin-top:10px}
+  .title-main{font-size:clamp(24px,4vw,36px)}
+  .title-sub{font-size:10px}
+  .tagline{font-size:11px;margin-top:10px}
 }
 </style>
 </head>
@@ -63,8 +68,8 @@ canvas.fx{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-e
   <div class="ui-layer" id="uiLayer">
     <div class="content">
       <h1 class="title reveal-fade reveal-1">
-        <span>swish</span>
-        <span>ventures<span class="dot" id="theDot">.</span></span>
+        <span class="title-main">swish</span>
+        <span class="title-sub">VENTURES<span class="dot" id="theDot">.</span></span>
       </h1>
       <p class="tagline reveal-fade reveal-2">we help the <span class="underline-accent">winners win</span>.</p>
     </div>

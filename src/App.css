@@ -1,3 +1,41 @@
+/* ================================
+   CUSTOM CURSOR
+   ================================ */
+.app-root {
+  cursor: none;
+}
+
+.cursor-dot {
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  background: rgba(139, 92, 246, 0.9);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 100;
+  transform: translate(-50%, -50%);
+}
+
+.cursor-glow {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgba(139, 92, 246, 0.12) 0%,
+    rgba(57, 0, 103, 0.08) 40%,
+    transparent 70%
+  );
+  transition: left 0.08s ease-out, top 0.08s ease-out;
+}
+
+/* ================================
+   LAYOUT
+   ================================ */
 .ui-layer {
   position: fixed;
   inset: 0;
@@ -8,29 +46,179 @@
   z-index: 5;
 }
 
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ================================
+   REVEAL ANIMATION
+   ================================ */
+.reveal-fade {
+  opacity: 0;
+  filter: blur(8px);
+  transition: opacity 1s ease, filter 1s ease;
+}
+
+.revealed .reveal-1 {
+  opacity: 1;
+  filter: blur(0);
+  transition-delay: 0.3s;
+}
+
+.revealed .reveal-2 {
+  opacity: 1;
+  filter: blur(0);
+  transition-delay: 1s;
+}
+
+.revealed .reveal-3 {
+  opacity: 1;
+  filter: blur(0);
+  transition-delay: 1.5s;
+}
+
+/* ================================
+   TITLE
+   ================================ */
 .title {
   display: flex;
   flex-direction: column;
-  /* ---- FONT OPTIONS (uncomment one) ----
-   * Option 1: Space Grotesk — tech-forward, geometric
-   * Option 2: Syne — distinctive, bold
-   * Option 3: Instrument Serif — editorial, elegant
-   * Option 4: Manrope — geometric, ultra-clean
-   * ---- */
+  align-items: center;
   font-family: 'Space Grotesk', sans-serif;
   font-size: clamp(44px, 5.5vw, 76px);
   font-weight: 400;
   line-height: 1.15;
-  color: #ffffff;
+  color: rgba(255, 255, 255, 0.95);
   letter-spacing: -0.03em;
   user-select: none;
-  text-shadow: 0 0 60px rgba(100, 160, 255, 0.06);
-  transform: none;
+  text-shadow:
+    0 0 30px rgba(139, 92, 246, 0.1),
+    0 0 60px rgba(57, 0, 103, 0.12),
+    0 0 120px rgba(57, 0, 103, 0.06);
 }
 
+/* ================================
+   DOT — with pulse hint
+   ================================ */
 .dot {
+  color: rgba(255, 255, 255, 0.95);
   display: inline-block;
-  transition: text-shadow 0.3s ease, opacity 0.4s ease;
-  cursor: default;
+  transition: opacity 0.4s ease;
+  cursor: none;
   pointer-events: auto;
+  margin-left: 6px;
+  position: relative;
+}
+
+.dot::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.7), 0 0 25px rgba(57, 0, 103, 0.5), 0 0 50px rgba(57, 0, 103, 0.2);
+  animation: dotPulse 3s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.8);
+  }
+}
+
+/* ================================
+   TAGLINE
+   ================================ */
+.tagline {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(14px, 1.2vw, 18px);
+  font-weight: 300;
+  color: rgba(160, 130, 210, 0.55);
+}
+
+.underline-accent {
+  text-decoration: none;
+  position: relative;
+}
+
+.underline-accent::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.6), rgba(57, 0, 103, 0.3), transparent);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.3), 0 0 20px rgba(57, 0, 103, 0.15);
+  letter-spacing: 0.06em;
+  margin-top: 28px;
+  user-select: none;
+}
+
+/* ================================
+   TRUST SIGNALS
+   ================================ */
+.trust {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 28px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(11px, 0.85vw, 13px);
+  font-weight: 400;
+  color: rgba(140, 155, 180, 0.45);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.trust-sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.4);
+}
+
+/* ================================
+   MOBILE
+   ================================ */
+@media (max-width: 768px) {
+  .title {
+    font-size: clamp(32px, 8vw, 48px);
+  }
+
+  .tagline {
+    font-size: 13px;
+    margin-top: 18px;
+  }
+
+  .trust {
+    font-size: 10px;
+    margin-top: 20px;
+    gap: 12px;
+  }
+
+  .cursor-dot,
+  .cursor-glow {
+    display: none;
+  }
+
+  .app-root {
+    cursor: auto;
+  }
+
+  .dot {
+    cursor: default;
+  }
 }

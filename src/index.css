@@ -12,9 +12,16 @@ body, html {
   color: #ffffff;
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  cursor: none;
 }
 
 #root {
   width: 100%;
   height: 100%;
+}
+
+@media (max-width: 768px) {
+  body, html {
+    cursor: auto;
+  }
 }

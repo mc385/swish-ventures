@@ -72,6 +72,13 @@ export default function LogoReveal({ dotState }) {
     nebBuf.width = NEB_RES;
     nebBuf.height = NEB_RES;
 
+    // Ambient nebula — fullscreen, always visible
+    const ambNebBuf = document.createElement('canvas');
+    const ambNebCtx = ambNebBuf.getContext('2d');
+    const AMB_RES = 200;
+    ambNebBuf.width = AMB_RES;
+    ambNebBuf.height = AMB_RES;
+
     function resize() {
       dpr = window.devicePixelRatio || 1;
       w = window.innerWidth;
@@ -83,6 +90,54 @@ export default function LogoReveal({ dotState }) {
 
     window.addEventListener('resize', resize);
     resize();
+
+    function drawAmbientNebula(t) {
+      const imgData = ambNebCtx.createImageData(AMB_RES, AMB_RES);
+      const data = imgData.data;
+      const slowT = t * 0.03;
+
+      for (let py = 0; py < AMB_RES; py++) {
+        for (let px = 0; px < AMB_RES; px++) {
+          const u = px / AMB_RES;
+          const v = py / AMB_RES;
+
+          const scale = 2.4;
+          const n1 = fbm(noise, u * scale + slowT * 1.1, v * scale + slowT * 0.7, 5);
+          const n2 = fbm(noise, u * scale * 1.3 - slowT * 0.5 + 5, v * scale * 1.3 + slowT * 0.4, 4);
+          const n3 = fbm(noise, u * scale * 0.6 + slowT * 0.25 + 12, v * scale * 0.6 - slowT * 0.35, 3);
+
+          let density = (n1 * 0.45 + n2 * 0.35 + n3 * 0.2);
+          density = Math.max(0, density + 0.18);
+
+          const tendril = Math.pow(Math.max(0, n1 * 0.5 + 0.5), 2.5);
+          const wisps = Math.pow(Math.max(0, n2 * 0.5 + 0.35), 2.0) * 0.6;
+          density = density * 0.4 + tendril * 0.35 + wisps * 0.25;
+
+          const hole = Math.max(0, -n3 * 0.35 + 0.06);
+          density = Math.max(0, density - hole * 0.2);
+
+          // Edge vignette — soft fade at screen edges
+          const ex = 1 - Math.pow(Math.abs(u * 2 - 1), 3);
+          const ey = 1 - Math.pow(Math.abs(v * 2 - 1), 3);
+          density *= ex * ey;
+
+          const i = Math.min(1, density * 3.5);
+
+          const idx = (py * AMB_RES + px) * 4;
+          data[idx] = Math.floor(15 + i * 75);
+          data[idx + 1] = Math.floor(50 + i * 130);
+          data[idx + 2] = Math.floor(140 + i * 115);
+          data[idx + 3] = Math.floor(i * 255 * 0.7);
+        }
+      }
+
+      ambNebCtx.putImageData(imgData, 0, 0);
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.drawImage(ambNebBuf, 0, 0, w, h);
+      ctx.restore();
+    }
 
     function drawOrb(dotX, dotY, p, t) {
       ctx.save();
@@ -242,16 +297,23 @@ export default function LogoReveal({ dotState }) {
       ctx.fillStyle = wideGrad;
       ctx.fill();
 
-      // Short right streak
-      const rightLen = 50 * ease;
+      // Right streak — longer, thinner
+      const rightLen = w * 0.35 * ease;
       const rGrad = ctx.createLinearGradient(dotX, dotY, dotX + rightLen, dotY);
-      rGrad.addColorStop(0, `rgba(120,180,255,${alpha * 0.45})`);
-      rGrad.addColorStop(0.3, `rgba(60,120,230,${alpha * 0.12})`);
+      rGrad.addColorStop(0, `rgba(120,180,255,${alpha * 0.4})`);
+      rGrad.addColorStop(0.05, `rgba(80,150,250,${alpha * 0.3})`);
+      rGrad.addColorStop(0.15, `rgba(50,110,230,${alpha * 0.15})`);
+      rGrad.addColorStop(0.35, `rgba(25,70,200,${alpha * 0.05})`);
+      rGrad.addColorStop(0.6, `rgba(12,40,160,${alpha * 0.015})`);
       rGrad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.beginPath();
-      ctx.moveTo(dotX, dotY - 1);
+      ctx.moveTo(dotX, dotY - 0.8);
+      ctx.lineTo(dotX + rightLen * 0.1, dotY - 1);
+      ctx.lineTo(dotX + rightLen * 0.4, dotY - 0.4);
       ctx.lineTo(dotX + rightLen, dotY);
-      ctx.lineTo(dotX, dotY + 1);
+      ctx.lineTo(dotX + rightLen * 0.4, dotY + 0.4);
+      ctx.lineTo(dotX + rightLen * 0.1, dotY + 1);
+      ctx.lineTo(dotX, dotY + 0.8);
       ctx.closePath();
       ctx.fillStyle = rGrad;
       ctx.fill();
@@ -379,6 +441,9 @@ export default function LogoReveal({ dotState }) {
       const dt = 1 / 60;
 
       ctx.clearRect(0, 0, w, h);
+
+      // Ambient nebula — always visible
+      drawAmbientNebula(t);
 
       const ds = dotRef.current;
       if (!ds || ds.x === 0) {

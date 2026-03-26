@@ -11,21 +11,26 @@
 .title {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  font-family: 'Courier Prime', 'Courier New', monospace;
-  font-size: clamp(42px, 5vw, 68px);
+  /* ---- FONT OPTIONS (uncomment one) ----
+   * Option 1: Space Grotesk — tech-forward, geometric
+   * Option 2: Syne — distinctive, bold
+   * Option 3: Instrument Serif — editorial, elegant
+   * Option 4: Manrope — geometric, ultra-clean
+   * ---- */
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(44px, 5.5vw, 76px);
   font-weight: 400;
-  line-height: 1.3;
+  line-height: 1.15;
   color: #ffffff;
-  text-align: center;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.03em;
   user-select: none;
-  text-shadow: 0 0 40px rgba(139, 92, 246, 0.12);
+  text-shadow: 0 0 60px rgba(100, 160, 255, 0.06);
+  transform: none;
 }
 
 .dot {
   display: inline-block;
-  transition: text-shadow 0.3s ease;
+  transition: text-shadow 0.3s ease, opacity 0.4s ease;
   cursor: default;
   pointer-events: auto;
 }
